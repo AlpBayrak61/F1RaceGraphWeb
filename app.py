@@ -29,6 +29,33 @@ def index():
         'MAG', 'LAT', 'MSC', 'SCH', 'GAS', 'RUS', 'SIR', 'STR', 'KVI', 'ERI']
     return render_template('index.html', seasons=seasons, tracks=tracks, drivers=drivers)
 
+@app.route('/get_telemetry_data', methods=['POST'])
+def get_telemetry_data():
+    season = int(request.form['season'])
+    track = request.form['track']
+    driver = request.form['driver']
+    
+    session = fastf1.get_session(season, track, 'R')
+    session.load()
+    
+    # Get telemetry data for the selected driver
+    telemetry = session.laps.pick_drivers([driver]).get_telemetry()
+
+    # Now we check which columns are available
+    print(telemetry.columns)  # Print the available columns in the telemetry data
+
+    # Ensure that telemetry has the necessary columns (Lap Number, Speed, Throttle, Brake)
+    telemetry_data = {
+        'lap_numbers': telemetry['LapNumber'].tolist() if 'LapNumber' in telemetry.columns else [],
+        'speed': telemetry['Speed'].tolist() if 'Speed' in telemetry.columns else [],
+        'throttle': telemetry['Throttle'].tolist() if 'Throttle' in telemetry.columns else [],
+        'brake': telemetry['Brake'].tolist() if 'Brake' in telemetry.columns else [],
+        'time': telemetry['Time'].dt.total_seconds().tolist() if 'Time' in telemetry.columns else []
+    }
+
+    # Send telemetry data as JSON to frontend
+    return jsonify({'telemetry_data': telemetry_data})
+
 @app.route('/get_lap_times', methods=['POST'])
 def get_lap_times():
     season = int(request.form['season'])
