@@ -1,23 +1,18 @@
-$(document).ready(function(){
-    // Handle form submission
-    $('#selectionForm').submit(function(event){
-        event.preventDefault();  // Prevent the default form submission
+$(document).ready(function() {
+    $('#selectionForm').submit(function(event) {
+        event.preventDefault();
 
-        // Serialize the form data
         var formData = $(this).serialize();
 
-        // Send an AJAX request to the backend to get the lap times chart
         $.ajax({
-            url: '/get_lap_times',  // The URL endpoint for the request
+            url: '/get_lap_times',
             type: 'POST',
-            data: formData,  // The data we are sending (form inputs)
+            data: formData,
             success: function(response) {
-                // On success, update the image src to show the lap chart
-                var imgData = 'data:image/png;base64,' + response.img_data;
-                $('#lap-chart').attr('src', imgData);  // Set the src attribute of the image
+                var graphData = JSON.parse(response.graph_json);
+                Plotly.newPlot('lap-chart', graphData.data, graphData.layout);
             },
             error: function() {
-                // Handle errors if any occur during the request
                 alert("Error occurred while fetching data.");
             }
         });
