@@ -13,7 +13,21 @@ cache_path = os.path.join(os.getcwd(), 'cache')
 if not os.path.exists(cache_path):
     os.makedirs(cache_path)
 fastf1.Cache.enable_cache(cache_path)
+@app.route('/')
+def index():
+    # Dynamically fetch available seasons
+    seasons = list(range(2020, 2025))
 
+    # Fetch track names from the most recent season
+    latest_season = seasons[-1]
+    schedule = fastf1.get_event_schedule(latest_season)
+
+    # Extract event names (track names)
+    tracks = schedule['EventName'].tolist()
+
+    drivers = ['VER', 'LEC', 'HAM', 'PER', 'RIC', 'NOR', 'SAI', 'RUS', 'ALO']
+
+    return render_template('index.html', seasons=seasons, tracks=tracks, drivers=drivers)
 @app.route('/')
 def index():
     # Example: available seasons and tracks
