@@ -1,6 +1,7 @@
 import os
 import pandas as pd
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from sqlalchemy import create_engine, text
 import sys
 
 # Add the directory containing the script.py to Python's path
@@ -26,6 +27,19 @@ except ImportError:
 
 app = Flask(__name__)
 app.secret_key = "formula1_telemetry_app"  # For flash messages
+
+
+# --- Configuration ---
+MYSQL_USER = 'root'
+MYSQL_PASSWORD = '933662BeanMYSQL!!'
+MYSQL_HOST = 'localhost'
+MYSQL_PORT = 3306
+MYSQL_DB = 'f1'
+CSV_FOLDER = './csv'
+
+# --- Connect to MySQL ---
+engine = create_engine(f'mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DB}')
+
 
 # Set up paths
 CWD = os.getcwd()
@@ -156,6 +170,38 @@ def update_options():
         }
     
     return {'error': 'Invalid year selection'}
+
+@app.route('/execute-sql', methods=['POST'])
+def execute_sql():
+    data = request.get_json()
+    query = data.get('query')
+
+    with engine.connect() as connection:
+        result = connection.execute(text(query))
+        if result.returns_rows:
+            rows = result.fetchall()
+            columns = list(result.keys())  # <-- convert to list here
+            return jsonify({
+                "columns": columns,
+                "rows": [list(row) for row in rows]
+            })
+        else:
+            return jsonify({"message": "Query executed successfully.", "columns": [], "rows": []})
+
+    # data = request.get_json()
+    # query = data.get('query')
+
+    # with engine.connect() as connection:
+    #     result = connection.execute(text(query))
+    #     if result:
+    #         # Fetch all rows if the query returns results
+    #         rows = result.fetchall()
+    #         columns = result.keys()
+    #         data = [dict(zip(columns, row)) for row in rows]
+    # jsonned = jsonify(data)
+    # print(jsonned['data'])
+    # return jsonify(data)
+            
 
 if __name__ == '__main__':
     app.run(debug=True)
